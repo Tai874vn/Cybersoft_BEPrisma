@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Backend API
+  app:
+    build: .
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+    env_file:
+      - .env
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  # PostgreSQL Database (for local development)
+  # In production, use Neon or other managed PostgreSQL
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cybersoft_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
