@@ -1,7 +1,7 @@
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const prisma = require('./prisma');
-const { hashPassword } = require('../utils/password');
+import passport from 'passport';
+import googleOAuthPkg from 'passport-google-oauth20';
+const { Strategy: GoogleStrategy } = googleOAuthPkg;
+import prisma from './prisma.js';
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
@@ -91,4 +91,4 @@ passport.use(
   )
 );
 
-module.exports = passport;
+export default passport;

@@ -1,4 +1,5 @@
-const { Sequelize } = require('sequelize');
+import pkg from 'sequelize';
+const { Sequelize } = pkg;
 
 /**
  * Sequelize configuration (optional - Prisma is the primary ORM)
@@ -25,7 +26,4 @@ const testConnection = async () => {
   }
 };
 
-module.exports = {
-  sequelize,
-  testConnection,
-};
+export { sequelize, testConnection };

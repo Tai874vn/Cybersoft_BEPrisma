@@ -48,7 +48,7 @@ const processImageUpload = (base64String) => {
   return base64String;
 };
 
-module.exports = {
+export {
   validateBase64Image,
   getImageFormat,
   validateImageSize,

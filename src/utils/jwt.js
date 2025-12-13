@@ -1,4 +1,4 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
 /**
  * Generate access token (short-lived, stored in memory on client)
@@ -28,7 +28,7 @@ const generateRefreshToken = (userId) => {
 const verifyAccessToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Invalid or expired access token');
   }
 };
@@ -39,12 +39,12 @@ const verifyAccessToken = (token) => {
 const verifyRefreshToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
-  } catch (error) {
+  } catch (_error) {
     throw new Error('Invalid or expired refresh token');
   }
 };
 
-module.exports = {
+export {
   generateAccessToken,
   generateRefreshToken,
   verifyAccessToken,

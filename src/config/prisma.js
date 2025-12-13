@@ -1,7 +1,15 @@
-const { PrismaClient } = require('@prisma/client');
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
+import pgPkg from 'pg';
+const { Pool } = pgPkg;
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
 
 const prisma = new PrismaClient({
+  adapter,
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });
 
-module.exports = prisma;
+export default prisma;

@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs');
+import bcrypt from 'bcryptjs';
 
 /**
  * Hash a password
@@ -15,7 +15,7 @@ const comparePassword = async (password, hash) => {
   return bcrypt.compare(password, hash);
 };
 
-module.exports = {
+export {
   hashPassword,
   comparePassword,
 };

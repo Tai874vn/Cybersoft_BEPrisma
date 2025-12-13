@@ -1,12 +1,15 @@
 {
   "name": "cybersoft_beprisma",
   "version": "1.0.0",
+  "type": "module",
   "description": "Backend API with JWT authentication, Google OAuth, GraphQL, and base64 image storage",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "health": "node scripts/check-health.js",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
@@ -18,8 +21,11 @@
   "license": "ISC",
   "dependencies": {
     "@apollo/server": "^5.2.0",
+    "@as-integrations/express5": "^1.1.2",
+    "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
     "bcryptjs": "^3.0.3",
+    "body-parser": "^2.2.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
@@ -34,6 +40,7 @@
     "sequelize": "^6.37.7"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.1",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
@@ -42,6 +49,8 @@
     "@types/node": "^25.0.0",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0",
     "nodemon": "^3.1.11",
     "prisma": "^7.1.0"
   }

@@ -1,40 +1,33 @@
-#!/usr/bin/env node
-
-/**
- * Health check script
- * Tests if the server is running and responsive
- */
-
-const http = require('http');
+import http from "http";
 
 const PORT = process.env.PORT || 4000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || "localhost";
 
 const options = {
   hostname: HOST,
   port: PORT,
-  path: '/health',
-  method: 'GET',
+  path: "/health",
+  method: "GET",
   timeout: 5000,
 };
 
 const req = http.request(options, (res) => {
-  let data = '';
+  let data = "";
 
-  res.on('data', (chunk) => {
+  res.on("data", (chunk) => {
     data += chunk;
   });
 
-  res.on('end', () => {
+  res.on("end", () => {
     if (res.statusCode === 200) {
       try {
         const response = JSON.parse(data);
-        console.log('✅ Server is healthy');
-        console.log('Status:', response.status);
-        console.log('Timestamp:', response.timestamp);
+        console.log("✅ Server is healthy");
+        console.log("Status:", response.status);
+        console.log("Timestamp:", response.timestamp);
         process.exit(0);
-      } catch (error) {
-        console.error('❌ Invalid response format');
+      } catch (_error) {
+        console.error("❌ Invalid response format");
         console.error(data);
         process.exit(1);
       }
@@ -46,15 +39,15 @@ const req = http.request(options, (res) => {
   });
 });
 
-req.on('error', (error) => {
-  console.error('❌ Health check failed');
-  console.error('Error:', error.message);
+req.on("error", (error) => {
+  console.error("❌ Health check failed");
+  console.error("Error:", error.message);
   console.error(`\nMake sure the server is running on http://${HOST}:${PORT}`);
   process.exit(1);
 });
 
-req.on('timeout', () => {
-  console.error('❌ Health check timed out');
+req.on("timeout", () => {
+  console.error("❌ Health check timed out");
   console.error(`Server did not respond within 5 seconds`);
   req.destroy();
   process.exit(1);

@@ -1,5 +1,5 @@
-const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
-const prisma = require('../config/prisma');
+import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
+import prisma from '../config/prisma.js';
 
 /**
  * Google OAuth callback handler
@@ -45,6 +45,6 @@ const googleCallback = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   googleCallback,
 };
