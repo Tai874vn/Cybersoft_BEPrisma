@@ -4,18 +4,21 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
+# Enable Corepack for yarn
+RUN corepack enable
+
 # Copy package files
-COPY package*.json ./
+COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN npm ci --only=production
+RUN yarn install --production --frozen-lockfile
 
 # Copy Prisma schema
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
 # Generate Prisma Client
-RUN npx prisma generate
+RUN yarn prisma:generate
 
 # Copy application source
 COPY src ./src
