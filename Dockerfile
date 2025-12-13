@@ -18,7 +18,7 @@ COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
 # Generate Prisma Client
-RUN yarn prisma:generate
+# RUN yarn prisma:generate
 
 # Copy application source
 COPY src ./src

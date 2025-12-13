@@ -5,7 +5,7 @@
   "description": "Backend API with JWT authentication, Google OAuth, GraphQL, and base64 image storage",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "prisma generate && node src/index.js",
     "dev": "nodemon src/index.js",
     "health": "node scripts/check-health.js",
     "lint": "eslint .",
