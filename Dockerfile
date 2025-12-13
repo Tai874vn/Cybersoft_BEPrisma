@@ -1,33 +1,22 @@
-# Use Node.js LTS version
 FROM node:20-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Enable Corepack for yarn
+# Enable Yarn
 RUN corepack enable
 
-# Copy package files
+# Copy dependency files
 COPY package.json yarn.lock ./
 
-# Install dependencies
+# Install production deps
 RUN yarn install --production --frozen-lockfile
 
-# Copy Prisma schema
-COPY prisma ./prisma/
-COPY prisma.config.ts ./
+# Copy app source (including prisma folder)
+COPY . .
 
-# Generate Prisma Client
-# RUN yarn prisma:generate
-
-# Copy application source
-COPY src ./src  
-
-# Expose port
 EXPOSE 4000
 
-# Set environment to production
 ENV NODE_ENV=production
 
-# Start the application
-CMD ["node", "src/index.js"]
+# IMPORTANT: use yarn start
+CMD ["yarn", "start"]

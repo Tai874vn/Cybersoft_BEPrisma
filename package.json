@@ -10,20 +10,18 @@
     "health": "node scripts/check-health.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
-    "prisma:studio": "prisma studio",
-    "prisma:push": "prisma db push",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prisma:studio": "prisma studio"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@apollo/server": "^5.2.0",
     "@as-integrations/express5": "^1.1.2",
     "@prisma/adapter-pg": "^7.1.0",
     "@prisma/client": "^7.1.0",
+    "prisma": "^7.1.0",
+
     "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "cookie-parser": "^1.4.7",
@@ -49,10 +47,6 @@
     "@types/passport-google-oauth20": "^2.0.17",
     "eslint": "^9.39.1",
     "globals": "^16.5.0",
-    "nodemon": "^3.1.11",
-    "prisma": "^7.1.0"
-  },
-  "engines": {
-  "node": ">=20"
-}
+    "nodemon": "^3.1.11"
+  }
 }
