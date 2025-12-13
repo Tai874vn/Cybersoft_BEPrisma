@@ -7,7 +7,9 @@ RUN corepack enable
 COPY package.json yarn.lock ./
 RUN yarn install --production --frozen-lockfile
 
-COPY prisma ./prisma
+COPY prisma ./prisma/
+COPY prisma.config.js ./  
+
 COPY src ./src
 
 ENV NODE_ENV=production
