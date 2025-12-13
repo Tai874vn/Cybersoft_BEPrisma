@@ -2,21 +2,15 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Enable Yarn
 RUN corepack enable
 
-# Copy dependency files
 COPY package.json yarn.lock ./
-
-# Install production deps
 RUN yarn install --production --frozen-lockfile
 
-# Copy app source (including prisma folder)
-COPY . .
-
-EXPOSE 4000
+COPY prisma ./prisma
+COPY src ./src
 
 ENV NODE_ENV=production
+EXPOSE 4000
 
-# IMPORTANT: use yarn start
-CMD ["yarn", "start"]
+CMD ["sh", "-c", "npx prisma generate && npx prisma migrate deploy && node src/index.js"]
