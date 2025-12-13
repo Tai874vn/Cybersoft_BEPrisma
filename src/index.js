@@ -107,9 +107,7 @@ const startServer = async () => {
   );
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Server ready at http://localhost:${PORT}`);
-    console.log(`🔥 GraphQL endpoint: http://localhost:${PORT}/graphql`);
-    console.log(`🔐 Google OAuth: http://localhost:${PORT}/auth/google`);
+    console.log(`🚀 Server ready`);
   });
 };
 
