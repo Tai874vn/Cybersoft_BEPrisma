@@ -21,7 +21,7 @@ COPY prisma.config.ts ./
 # RUN yarn prisma:generate
 
 # Copy application source
-COPY src ./src
+COPY src ./src  
 
 # Expose port
 EXPOSE 4000
