@@ -102,6 +102,7 @@ const typeDefs = `#graphql
     me: User
     user(id: ID!): User
     users(page: Int, limit: Int): [User!]!
+    isAdmin: Boolean!
 
     # Post queries
     getPosts(page: Int, limit: Int): PostConnection!
@@ -111,6 +112,7 @@ const typeDefs = `#graphql
 
     # Comment queries
     getComments(postId: ID!, page: Int, limit: Int): CommentConnection!
+    getAllComments(page: Int, limit: Int): CommentConnection!
 
     # Saved post queries
     getSavedPosts(page: Int, limit: Int): SavedPostConnection!
