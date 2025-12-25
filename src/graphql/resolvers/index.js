@@ -354,51 +354,6 @@ const resolvers = {
 
       return fullUser?.role === "ADMIN";
     },
-
-    /**
-     * Preview what will be deleted when deleting a user (admin only)
-     */
-    previewDeleteUser: async (_, { userId }, context) => {
-      requireAdmin(context);
-
-      const [postsCount, commentsCount, savedPostsCount, savedCommentsCount] =
-        await Promise.all([
-          prisma.post.count({ where: { userId } }),
-          prisma.comment.count({ where: { userId } }),
-          prisma.savedPost.count({ where: { userId } }),
-          prisma.savedComment.count({ where: { userId } }),
-        ]);
-
-      return {
-        posts: postsCount,
-        comments: commentsCount,
-        savedPosts: savedPostsCount,
-        savedComments: savedCommentsCount,
-        totalItems:
-          postsCount + commentsCount + savedPostsCount + savedCommentsCount,
-      };
-    },
-
-    /**
-     * Preview what will be deleted when deleting a post (admin only)
-     */
-    previewDeletePost: async (_, { postId }, context) => {
-      requireAdmin(context);
-
-      const [commentsCount, savedPostsCount] = await Promise.all([
-        prisma.comment.count({ where: { postId } }),
-        prisma.savedPost.count({ where: { postId } }),
-      ]);
-
-      const items = [];
-      if (commentsCount > 0) items.push(`${commentsCount} comment(s)`);
-      if (savedPostsCount > 0) items.push(`${savedPostsCount} saved post(s)`);
-
-      return {
-        willDelete: commentsCount + savedPostsCount,
-        items,
-      };
-    },
   },
 
   Mutation: {
