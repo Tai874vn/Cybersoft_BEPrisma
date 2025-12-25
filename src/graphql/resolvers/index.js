@@ -8,12 +8,19 @@ import {
 import { requireAuth } from "../../middleware/auth.js";
 import { processImageUpload } from "../../utils/imageHandler.js";
 
-const requireAdmin = (context) => {
+const requireAdmin = async (context) => {
   const user = requireAuth(context);
-  if (user.role !== "ADMIN") {
+
+  // Fetch full user from database to check role
+  const fullUser = await prisma.user.findUnique({
+    where: { id: user.id },
+  });
+
+  if (!fullUser || fullUser.role !== "ADMIN") {
     throw new Error("Admin access required");
   }
-  return user;
+
+  return fullUser;
 };
 
 const resolvers = {
@@ -347,7 +354,7 @@ const resolvers = {
      * Get all comments across all posts (admin only)
      */
     getAllComments: async (_, { page = 1, limit = 20 }, context) => {
-      requireAdmin(context);
+      await requireAdmin(context);
 
       const skip = (page - 1) * limit;
 
