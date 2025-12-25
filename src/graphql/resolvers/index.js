@@ -60,13 +60,17 @@ const resolvers = {
     /**
      * Get all posts with pagination
      */
-    getPosts: async (_, { page = 1, limit = 20 }) => {
-      const skip = (page - 1) * limit;
+    getPosts: async (_, { page = 1, limit = 8 }) => {
+      // Enforce maximum 8 posts per page by capping the limit
+      const validLimit = Math.min(Math.max(Number(limit) || 8, 1), 8);
+      console.log(`[getPosts] Requested limit: ${limit}, Using validLimit: ${validLimit}`);
+
+      const skip = (page - 1) * validLimit;
 
       const [posts, totalCount] = await Promise.all([
         prisma.post.findMany({
           skip,
-          take: limit,
+          take: validLimit,
           orderBy: { createdAt: 'desc' },
           include: {
             user: true,
@@ -83,6 +87,7 @@ const resolvers = {
       return {
         posts,
         totalCount,
+        totalPages: Math.ceil(totalCount / validLimit),
         hasMore: skip + posts.length < totalCount,
         page,
       };
@@ -91,8 +96,11 @@ const resolvers = {
     /**
      * Search posts by title, description with pagination
      */
-    searchPosts: async (_, { query, page = 1, limit = 20 }) => {
-      const skip = (page - 1) * limit;
+    searchPosts: async (_, { query, page = 1, limit = 8 }) => {
+      // Enforce maximum 8 posts per page by capping the limit
+      const validLimit = Math.min(Math.max(Number(limit) || 8, 1), 8);
+
+      const skip = (page - 1) * validLimit;
 
       const where = {
         OR: [
@@ -105,7 +113,7 @@ const resolvers = {
         prisma.post.findMany({
           where,
           skip,
-          take: limit,
+          take: validLimit,
           orderBy: { createdAt: 'desc' },
           include: {
             user: true,
@@ -122,6 +130,7 @@ const resolvers = {
       return {
         posts,
         totalCount,
+        totalPages: Math.ceil(totalCount / validLimit),
         hasMore: skip + posts.length < totalCount,
         page,
       };
@@ -148,8 +157,11 @@ const resolvers = {
     /**
      * Get posts by user ID with pagination
      */
-    getUserPosts: async (_, { userId, page = 1, limit = 20 }) => {
-      const skip = (page - 1) * limit;
+    getUserPosts: async (_, { userId, page = 1, limit = 8 }) => {
+      // Enforce maximum 8 posts per page by capping the limit
+      const validLimit = Math.min(Math.max(Number(limit) || 8, 1), 8);
+
+      const skip = (page - 1) * validLimit;
 
       const where = { userId };
 
@@ -157,7 +169,7 @@ const resolvers = {
         prisma.post.findMany({
           where,
           skip,
-          take: limit,
+          take: validLimit,
           orderBy: { createdAt: 'desc' },
           include: {
             user: true,
@@ -174,6 +186,7 @@ const resolvers = {
       return {
         posts,
         totalCount,
+        totalPages: Math.ceil(totalCount / validLimit),
         hasMore: skip + posts.length < totalCount,
         page,
       };

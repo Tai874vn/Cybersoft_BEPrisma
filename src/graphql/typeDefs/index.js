@@ -48,6 +48,7 @@ const typeDefs = `#graphql
   type PostConnection {
     posts: [Post!]!
     totalCount: Int!
+    totalPages: Int!
     hasMore: Boolean!
     page: Int!
   }
