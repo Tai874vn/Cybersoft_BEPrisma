@@ -1,13 +1,17 @@
-import prisma from '../../config/prisma.js';
-import { hashPassword, comparePassword } from '../../utils/password.js';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../../utils/jwt.js';
-import { requireAuth } from '../../middleware/auth.js';
-import { processImageUpload } from '../../utils/imageHandler.js';
+import prisma from "../../config/prisma.js";
+import { hashPassword, comparePassword } from "../../utils/password.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../../utils/jwt.js";
+import { requireAuth } from "../../middleware/auth.js";
+import { processImageUpload } from "../../utils/imageHandler.js";
 
 const requireAdmin = (context) => {
   const user = requireAuth(context);
-  if (user.role !== 'ADMIN') {
-    throw new Error('Admin access required');
+  if (user.role !== "ADMIN") {
+    throw new Error("Admin access required");
   }
   return user;
 };
@@ -45,15 +49,15 @@ const resolvers = {
         where: { id: user.id },
       });
 
-      if (fullUser.role !== 'ADMIN') {
-        throw new Error('Admin access required');
+      if (fullUser.role !== "ADMIN") {
+        throw new Error("Admin access required");
       }
 
       const skip = (page - 1) * limit;
       return await prisma.user.findMany({
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
     },
 
@@ -63,7 +67,9 @@ const resolvers = {
     getPosts: async (_, { page = 1, limit = 8 }) => {
       // Enforce maximum 8 posts per page by capping the limit
       const validLimit = Math.min(Math.max(Number(limit) || 8, 1), 8);
-      console.log(`[getPosts] Requested limit: ${limit}, Using validLimit: ${validLimit}`);
+      console.log(
+        `[getPosts] Requested limit: ${limit}, Using validLimit: ${validLimit}`
+      );
 
       const skip = (page - 1) * validLimit;
 
@@ -71,7 +77,7 @@ const resolvers = {
         prisma.post.findMany({
           skip,
           take: validLimit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           include: {
             user: true,
             comments: {
@@ -104,8 +110,8 @@ const resolvers = {
 
       const where = {
         OR: [
-          { title: { contains: query, mode: 'insensitive' } },
-          { description: { contains: query, mode: 'insensitive' } },
+          { title: { contains: query, mode: "insensitive" } },
+          { description: { contains: query, mode: "insensitive" } },
         ],
       };
 
@@ -114,7 +120,7 @@ const resolvers = {
           where,
           skip,
           take: validLimit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           include: {
             user: true,
             comments: {
@@ -148,7 +154,7 @@ const resolvers = {
             include: {
               user: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
           },
         },
       });
@@ -170,7 +176,7 @@ const resolvers = {
           where,
           skip,
           take: validLimit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           include: {
             user: true,
             comments: {
@@ -205,7 +211,7 @@ const resolvers = {
           where,
           skip,
           take: limit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           include: {
             user: true,
             post: true,
@@ -240,7 +246,7 @@ const resolvers = {
           where,
           skip,
           take: validLimit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           include: {
             user: true,
             post: {
@@ -297,7 +303,7 @@ const resolvers = {
           where,
           skip,
           take: limit,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
           include: {
             user: true,
             comment: {
@@ -337,35 +343,6 @@ const resolvers = {
     },
 
     /**
-     * Get all comments across all posts (admin only)
-     */
-    getAllComments: async (_, { page = 1, limit = 20 }, context) => {
-      requireAdmin(context);
-
-      const skip = (page - 1) * limit;
-
-      const [comments, totalCount] = await Promise.all([
-        prisma.comment.findMany({
-          skip,
-          take: limit,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            user: true,
-            post: true,
-          },
-        }),
-        prisma.comment.count(),
-      ]);
-
-      return {
-        comments,
-        totalCount,
-        hasMore: skip + comments.length < totalCount,
-        page,
-      };
-    },
-
-    /**
      * Check if current user is admin
      */
     isAdmin: async (_, __, context) => {
@@ -375,7 +352,52 @@ const resolvers = {
         where: { id: user.id },
       });
 
-      return fullUser?.role === 'ADMIN';
+      return fullUser?.role === "ADMIN";
+    },
+
+    /**
+     * Preview what will be deleted when deleting a user (admin only)
+     */
+    previewDeleteUser: async (_, { userId }, context) => {
+      requireAdmin(context);
+
+      const [postsCount, commentsCount, savedPostsCount, savedCommentsCount] =
+        await Promise.all([
+          prisma.post.count({ where: { userId } }),
+          prisma.comment.count({ where: { userId } }),
+          prisma.savedPost.count({ where: { userId } }),
+          prisma.savedComment.count({ where: { userId } }),
+        ]);
+
+      return {
+        posts: postsCount,
+        comments: commentsCount,
+        savedPosts: savedPostsCount,
+        savedComments: savedCommentsCount,
+        totalItems:
+          postsCount + commentsCount + savedPostsCount + savedCommentsCount,
+      };
+    },
+
+    /**
+     * Preview what will be deleted when deleting a post (admin only)
+     */
+    previewDeletePost: async (_, { postId }, context) => {
+      requireAdmin(context);
+
+      const [commentsCount, savedPostsCount] = await Promise.all([
+        prisma.comment.count({ where: { postId } }),
+        prisma.savedPost.count({ where: { postId } }),
+      ]);
+
+      const items = [];
+      if (commentsCount > 0) items.push(`${commentsCount} comment(s)`);
+      if (savedPostsCount > 0) items.push(`${savedPostsCount} saved post(s)`);
+
+      return {
+        willDelete: commentsCount + savedPostsCount,
+        items,
+      };
     },
   },
 
@@ -390,7 +412,7 @@ const resolvers = {
       });
 
       if (existingUser) {
-        throw new Error('Username already exists');
+        throw new Error("Username already exists");
       }
 
       // Check if email exists (if provided)
@@ -400,7 +422,7 @@ const resolvers = {
         });
 
         if (existingEmail) {
-          throw new Error('Email already exists');
+          throw new Error("Email already exists");
         }
       }
 
@@ -433,10 +455,10 @@ const resolvers = {
       });
 
       // Set refresh token in HTTP-only cookie
-      context.res.cookie('refreshToken', refreshToken, {
+      context.res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.COOKIE_SECURE === 'true',
-        sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+        secure: process.env.COOKIE_SECURE === "true",
+        sameSite: process.env.COOKIE_SAME_SITE || "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
 
@@ -456,14 +478,14 @@ const resolvers = {
       });
 
       if (!user || !user.password) {
-        throw new Error('Invalid credentials');
+        throw new Error("Invalid credentials");
       }
 
       // Verify password
       const isValid = await comparePassword(password, user.password);
 
       if (!isValid) {
-        throw new Error('Invalid credentials');
+        throw new Error("Invalid credentials");
       }
 
       // Generate tokens
@@ -483,10 +505,10 @@ const resolvers = {
       });
 
       // Set refresh token in HTTP-only cookie
-      context.res.cookie('refreshToken', refreshToken, {
+      context.res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        secure: process.env.COOKIE_SECURE === 'true',
-        sameSite: process.env.COOKIE_SAME_SITE || 'lax',
+        secure: process.env.COOKIE_SECURE === "true",
+        sameSite: process.env.COOKIE_SAME_SITE || "lax",
         maxAge: 7 * 24 * 60 * 60 * 1000,
       });
 
@@ -503,14 +525,14 @@ const resolvers = {
       const refreshToken = context.req.cookies.refreshToken;
 
       if (!refreshToken) {
-        throw new Error('No refresh token provided');
+        throw new Error("No refresh token provided");
       }
 
       // Verify refresh token
       try {
         verifyRefreshToken(refreshToken);
       } catch (_error) {
-        throw new Error('Invalid refresh token');
+        throw new Error("Invalid refresh token");
       }
 
       // Check if refresh token exists in database
@@ -520,7 +542,7 @@ const resolvers = {
       });
 
       if (!storedToken) {
-        throw new Error('Refresh token not found');
+        throw new Error("Refresh token not found");
       }
 
       // Check if token is expired
@@ -529,7 +551,7 @@ const resolvers = {
         await prisma.refreshToken.delete({
           where: { id: storedToken.id },
         });
-        throw new Error('Refresh token expired');
+        throw new Error("Refresh token expired");
       }
 
       // Generate new access token
@@ -555,7 +577,7 @@ const resolvers = {
       }
 
       // Clear cookie
-      context.res.clearCookie('refreshToken');
+      context.res.clearCookie("refreshToken");
 
       return true;
     },
@@ -576,7 +598,7 @@ const resolvers = {
         });
 
         if (existingUser) {
-          throw new Error('Email already in use');
+          throw new Error("Email already in use");
         }
       }
 
@@ -609,14 +631,17 @@ const resolvers = {
       });
 
       if (!userWithPassword.password) {
-        throw new Error('Cannot update password for OAuth users');
+        throw new Error("Cannot update password for OAuth users");
       }
 
       // Verify old password
-      const isValid = await comparePassword(oldPassword, userWithPassword.password);
+      const isValid = await comparePassword(
+        oldPassword,
+        userWithPassword.password
+      );
 
       if (!isValid) {
-        throw new Error('Invalid old password');
+        throw new Error("Invalid old password");
       }
 
       // Hash new password
@@ -646,7 +671,7 @@ const resolvers = {
       });
 
       if (existingGoogleUser) {
-        throw new Error('Google account already linked to another user');
+        throw new Error("Google account already linked to another user");
       }
 
       // Update user with Google ID
@@ -717,7 +742,7 @@ const resolvers = {
       });
 
       if (!post) {
-        throw new Error('Post not found');
+        throw new Error("Post not found");
       }
 
       // Get user with role
@@ -726,8 +751,8 @@ const resolvers = {
       });
 
       // Check if user is owner or admin
-      if (post.userId !== user.id && fullUser.role !== 'ADMIN') {
-        throw new Error('Not authorized to update this post');
+      if (post.userId !== user.id && fullUser.role !== "ADMIN") {
+        throw new Error("Not authorized to update this post");
       }
 
       // Prepare update data
@@ -767,7 +792,7 @@ const resolvers = {
       });
 
       if (!post) {
-        throw new Error('Post not found');
+        throw new Error("Post not found");
       }
 
       // Get user with role
@@ -776,8 +801,8 @@ const resolvers = {
       });
 
       // Check if user is owner or admin
-      if (post.userId !== user.id && fullUser.role !== 'ADMIN') {
-        throw new Error('Not authorized to delete this post');
+      if (post.userId !== user.id && fullUser.role !== "ADMIN") {
+        throw new Error("Not authorized to delete this post");
       }
 
       // Delete post (comments will be cascade deleted)
@@ -800,7 +825,7 @@ const resolvers = {
       });
 
       if (!post) {
-        throw new Error('Post not found');
+        throw new Error("Post not found");
       }
 
       // Create comment
@@ -831,7 +856,7 @@ const resolvers = {
       });
 
       if (!comment) {
-        throw new Error('Comment not found');
+        throw new Error("Comment not found");
       }
 
       // Get user with role
@@ -840,8 +865,8 @@ const resolvers = {
       });
 
       // Check if user is owner or admin
-      if (comment.userId !== user.id && fullUser.role !== 'ADMIN') {
-        throw new Error('Not authorized to delete this comment');
+      if (comment.userId !== user.id && fullUser.role !== "ADMIN") {
+        throw new Error("Not authorized to delete this comment");
       }
 
       // Delete comment
@@ -864,7 +889,7 @@ const resolvers = {
       });
 
       if (!post) {
-        throw new Error('Post not found');
+        throw new Error("Post not found");
       }
 
       // Check if already saved
@@ -876,7 +901,7 @@ const resolvers = {
       });
 
       if (existingSave) {
-        throw new Error('Post already saved');
+        throw new Error("Post already saved");
       }
 
       // Save the post
@@ -918,7 +943,7 @@ const resolvers = {
       });
 
       if (!savedPost) {
-        throw new Error('Post not saved');
+        throw new Error("Post not saved");
       }
 
       // Delete the saved post
@@ -941,7 +966,7 @@ const resolvers = {
       });
 
       if (!comment) {
-        throw new Error('Comment not found');
+        throw new Error("Comment not found");
       }
 
       // Check if already saved
@@ -953,7 +978,7 @@ const resolvers = {
       });
 
       if (existingSave) {
-        throw new Error('Comment already saved');
+        throw new Error("Comment already saved");
       }
 
       // Save the comment
@@ -991,7 +1016,7 @@ const resolvers = {
       });
 
       if (!savedComment) {
-        throw new Error('Comment not saved');
+        throw new Error("Comment not saved");
       }
 
       // Delete the saved comment
@@ -1013,8 +1038,8 @@ const resolvers = {
         where: { id: user.id },
       });
 
-      if (adminUser.role !== 'ADMIN') {
-        throw new Error('Admin access required');
+      if (adminUser.role !== "ADMIN") {
+        throw new Error("Admin access required");
       }
 
       // Update user role
@@ -1037,13 +1062,13 @@ const resolvers = {
         where: { id: user.id },
       });
 
-      if (adminUser.role !== 'ADMIN') {
-        throw new Error('Admin access required');
+      if (adminUser.role !== "ADMIN") {
+        throw new Error("Admin access required");
       }
 
       // Prevent admin from deleting themselves
       if (userId === user.id) {
-        throw new Error('Cannot delete your own account');
+        throw new Error("Cannot delete your own account");
       }
 
       // Delete user (cascade will delete posts, comments, tokens)
@@ -1065,8 +1090,8 @@ const resolvers = {
         where: { id: user.id },
       });
 
-      if (adminUser.role !== 'ADMIN') {
-        throw new Error('Admin access required');
+      if (adminUser.role !== "ADMIN") {
+        throw new Error("Admin access required");
       }
 
       // Delete post
@@ -1088,8 +1113,8 @@ const resolvers = {
         where: { id: user.id },
       });
 
-      if (adminUser.role !== 'ADMIN') {
-        throw new Error('Admin access required');
+      if (adminUser.role !== "ADMIN") {
+        throw new Error("Admin access required");
       }
 
       // Delete comment
@@ -1105,19 +1130,19 @@ const resolvers = {
     posts: async (parent) => {
       return await prisma.post.findMany({
         where: { userId: parent.id },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
     },
     comments: async (parent) => {
       return await prisma.comment.findMany({
         where: { userId: parent.id },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       });
     },
     savedPosts: async (parent) => {
       return await prisma.savedPost.findMany({
         where: { userId: parent.id },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           post: {
             include: {
@@ -1138,7 +1163,7 @@ const resolvers = {
     comments: async (parent) => {
       return await prisma.comment.findMany({
         where: { postId: parent.id },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           user: true,
         },
