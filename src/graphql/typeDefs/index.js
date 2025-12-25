@@ -38,6 +38,7 @@ const typeDefs = `#graphql
     postId: String!
     user: User!
     post: Post!
+    isSaved: Boolean!
     createdAt: String!
     updatedAt: String!
   }
@@ -48,6 +49,15 @@ const typeDefs = `#graphql
     postId: String!
     user: User!
     post: Post!
+    createdAt: String!
+  }
+
+  type SavedComment {
+    id: ID!
+    userId: String!
+    commentId: String!
+    user: User!
+    comment: Comment!
     createdAt: String!
   }
 
@@ -79,6 +89,14 @@ const typeDefs = `#graphql
     page: Int!
   }
 
+  type SavedCommentConnection {
+    savedComments: [SavedComment!]!
+    totalCount: Int!
+    totalPages: Int!
+    hasMore: Boolean!
+    page: Int!
+  }
+
   type Query {
     # User queries
     me: User
@@ -97,6 +115,10 @@ const typeDefs = `#graphql
     # Saved post queries
     getSavedPosts(page: Int, limit: Int): SavedPostConnection!
     isPostSaved(postId: ID!): Boolean!
+
+    # Saved comment queries
+    getSavedComments(page: Int, limit: Int): SavedCommentConnection!
+    isCommentSaved(commentId: ID!): Boolean!
   }
 
   type Mutation {
@@ -132,6 +154,10 @@ const typeDefs = `#graphql
     # Saved post mutations
     savePost(postId: ID!): SavedPost!
     unsavePost(postId: ID!): Boolean!
+
+    # Saved comment mutations
+    saveComment(commentId: ID!): SavedComment!
+    unsaveComment(commentId: ID!): Boolean!
 
     # Admin mutations
     updateUserRole(userId: ID!, role: Role!): User!

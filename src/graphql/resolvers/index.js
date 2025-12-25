@@ -282,6 +282,59 @@ const resolvers = {
 
       return !!savedPost;
     },
+
+    /**
+     * Get all saved comments for current user with pagination
+     */
+    getSavedComments: async (_, { page = 1, limit = 20 }, context) => {
+      const user = requireAuth(context);
+
+      const skip = (page - 1) * limit;
+      const where = { userId: user.id };
+
+      const [savedComments, totalCount] = await Promise.all([
+        prisma.savedComment.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: true,
+            comment: {
+              include: {
+                user: true,
+                post: true,
+              },
+            },
+          },
+        }),
+        prisma.savedComment.count({ where }),
+      ]);
+
+      return {
+        savedComments,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + savedComments.length < totalCount,
+        page,
+      };
+    },
+
+    /**
+     * Check if a comment is saved by current user
+     */
+    isCommentSaved: async (_, { commentId }, context) => {
+      const user = requireAuth(context);
+
+      const savedComment = await prisma.savedComment.findFirst({
+        where: {
+          userId: user.id,
+          commentId,
+        },
+      });
+
+      return !!savedComment;
+    },
   },
 
   Mutation: {
@@ -835,6 +888,79 @@ const resolvers = {
     },
 
     /**
+     * Save a comment (bookmark)
+     */
+    saveComment: async (_, { commentId }, context) => {
+      const user = requireAuth(context);
+
+      // Check if comment exists
+      const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+      });
+
+      if (!comment) {
+        throw new Error('Comment not found');
+      }
+
+      // Check if already saved
+      const existingSave = await prisma.savedComment.findFirst({
+        where: {
+          userId: user.id,
+          commentId,
+        },
+      });
+
+      if (existingSave) {
+        throw new Error('Comment already saved');
+      }
+
+      // Save the comment
+      const savedComment = await prisma.savedComment.create({
+        data: {
+          userId: user.id,
+          commentId,
+        },
+        include: {
+          user: true,
+          comment: {
+            include: {
+              user: true,
+              post: true,
+            },
+          },
+        },
+      });
+
+      return savedComment;
+    },
+
+    /**
+     * Unsave a comment (remove bookmark)
+     */
+    unsaveComment: async (_, { commentId }, context) => {
+      const user = requireAuth(context);
+
+      // Check if comment is saved
+      const savedComment = await prisma.savedComment.findFirst({
+        where: {
+          userId: user.id,
+          commentId,
+        },
+      });
+
+      if (!savedComment) {
+        throw new Error('Comment not saved');
+      }
+
+      // Delete the saved comment
+      await prisma.savedComment.delete({
+        where: { id: savedComment.id },
+      });
+
+      return true;
+    },
+
+    /**
      * Update user role (admin only)
      */
     updateUserRole: async (_, { userId, role }, context) => {
@@ -1004,6 +1130,21 @@ const resolvers = {
         where: { id: parent.postId },
       });
     },
+    isSaved: async (parent, _, context) => {
+      // If no user is authenticated, comment is not saved
+      if (!context.user || !context.user.id) {
+        return false;
+      }
+
+      const savedComment = await prisma.savedComment.findFirst({
+        where: {
+          userId: context.user.id,
+          commentId: parent.id,
+        },
+      });
+
+      return !!savedComment;
+    },
   },
 
   SavedPost: {
@@ -1022,6 +1163,23 @@ const resolvers = {
               user: true,
             },
           },
+        },
+      });
+    },
+  },
+
+  SavedComment: {
+    user: async (parent) => {
+      return await prisma.user.findUnique({
+        where: { id: parent.userId },
+      });
+    },
+    comment: async (parent) => {
+      return await prisma.comment.findUnique({
+        where: { id: parent.commentId },
+        include: {
+          user: true,
+          post: true,
         },
       });
     },
