@@ -24,6 +24,7 @@ model User {
   refreshTokens RefreshToken[]
   posts         Post[]
   comments      Comment[]
+  savedPosts    SavedPost[]
 
   @@index([email])
   @@index([googleId])
@@ -43,15 +44,16 @@ model RefreshToken {
 }
 
 model Post {
-  id          String    @id @default(uuid())
+  id          String      @id @default(uuid())
   title       String
-  description String?   @db.Text
-  image       String    @db.Text
+  description String?     @db.Text
+  image       String      @db.Text
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   comments    Comment[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  savedBy     SavedPost[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   @@index([userId])
   @@index([title])
@@ -68,6 +70,20 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId])
+  @@index([postId])
+  @@index([createdAt])
+}
+
+model SavedPost {
+  id        String   @id @default(uuid())
+  userId    String
+  postId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
   @@index([userId])
   @@index([postId])
   @@index([createdAt])

@@ -221,6 +221,67 @@ const resolvers = {
         page,
       };
     },
+
+    /**
+     * Get all saved posts for current user with pagination
+     */
+    getSavedPosts: async (_, { page = 1, limit = 8 }, context) => {
+      const user = requireAuth(context);
+
+      // Enforce maximum 8 posts per page by capping the limit
+      const validLimit = Math.min(Math.max(Number(limit) || 8, 1), 8);
+
+      const skip = (page - 1) * validLimit;
+
+      const where = { userId: user.id };
+
+      const [savedPosts, totalCount] = await Promise.all([
+        prisma.savedPost.findMany({
+          where,
+          skip,
+          take: validLimit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            user: true,
+            post: {
+              include: {
+                user: true,
+                comments: {
+                  include: {
+                    user: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+        prisma.savedPost.count({ where }),
+      ]);
+
+      return {
+        savedPosts,
+        totalCount,
+        totalPages: Math.ceil(totalCount / validLimit),
+        hasMore: skip + savedPosts.length < totalCount,
+        page,
+      };
+    },
+
+    /**
+     * Check if a post is saved by current user
+     */
+    isPostSaved: async (_, { postId }, context) => {
+      const user = requireAuth(context);
+
+      const savedPost = await prisma.savedPost.findFirst({
+        where: {
+          userId: user.id,
+          postId,
+        },
+      });
+
+      return !!savedPost;
+    },
   },
 
   Mutation: {
@@ -697,6 +758,83 @@ const resolvers = {
     },
 
     /**
+     * Save a post (bookmark)
+     */
+    savePost: async (_, { postId }, context) => {
+      const user = requireAuth(context);
+
+      // Check if post exists
+      const post = await prisma.post.findUnique({
+        where: { id: postId },
+      });
+
+      if (!post) {
+        throw new Error('Post not found');
+      }
+
+      // Check if already saved
+      const existingSave = await prisma.savedPost.findFirst({
+        where: {
+          userId: user.id,
+          postId,
+        },
+      });
+
+      if (existingSave) {
+        throw new Error('Post already saved');
+      }
+
+      // Save the post
+      const savedPost = await prisma.savedPost.create({
+        data: {
+          userId: user.id,
+          postId,
+        },
+        include: {
+          user: true,
+          post: {
+            include: {
+              user: true,
+              comments: {
+                include: {
+                  user: true,
+                },
+              },
+            },
+          },
+        },
+      });
+
+      return savedPost;
+    },
+
+    /**
+     * Unsave a post (remove bookmark)
+     */
+    unsavePost: async (_, { postId }, context) => {
+      const user = requireAuth(context);
+
+      // Check if post is saved
+      const savedPost = await prisma.savedPost.findFirst({
+        where: {
+          userId: user.id,
+          postId,
+        },
+      });
+
+      if (!savedPost) {
+        throw new Error('Post not saved');
+      }
+
+      // Delete the saved post
+      await prisma.savedPost.delete({
+        where: { id: savedPost.id },
+      });
+
+      return true;
+    },
+
+    /**
      * Update user role (admin only)
      */
     updateUserRole: async (_, { userId, role }, context) => {
@@ -808,6 +946,19 @@ const resolvers = {
         orderBy: { createdAt: 'desc' },
       });
     },
+    savedPosts: async (parent) => {
+      return await prisma.savedPost.findMany({
+        where: { userId: parent.id },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          post: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      });
+    },
   },
 
   Post: {
@@ -825,6 +976,21 @@ const resolvers = {
         },
       });
     },
+    isSaved: async (parent, _, context) => {
+      // If no user is authenticated, post is not saved
+      if (!context.user || !context.user.id) {
+        return false;
+      }
+
+      const savedPost = await prisma.savedPost.findFirst({
+        where: {
+          userId: context.user.id,
+          postId: parent.id,
+        },
+      });
+
+      return !!savedPost;
+    },
   },
 
   Comment: {
@@ -836,6 +1002,27 @@ const resolvers = {
     post: async (parent) => {
       return await prisma.post.findUnique({
         where: { id: parent.postId },
+      });
+    },
+  },
+
+  SavedPost: {
+    user: async (parent) => {
+      return await prisma.user.findUnique({
+        where: { id: parent.userId },
+      });
+    },
+    post: async (parent) => {
+      return await prisma.post.findUnique({
+        where: { id: parent.postId },
+        include: {
+          user: true,
+          comments: {
+            include: {
+              user: true,
+            },
+          },
+        },
       });
     },
   },

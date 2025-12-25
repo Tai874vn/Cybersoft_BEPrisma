@@ -15,6 +15,7 @@ const typeDefs = `#graphql
     updatedAt: String!
     posts: [Post!]
     comments: [Comment!]
+    savedPosts: [SavedPost!]
   }
 
   type Post {
@@ -25,6 +26,7 @@ const typeDefs = `#graphql
     userId: String!
     user: User!
     comments: [Comment!]
+    isSaved: Boolean!
     createdAt: String!
     updatedAt: String!
   }
@@ -38,6 +40,15 @@ const typeDefs = `#graphql
     post: Post!
     createdAt: String!
     updatedAt: String!
+  }
+
+  type SavedPost {
+    id: ID!
+    userId: String!
+    postId: String!
+    user: User!
+    post: Post!
+    createdAt: String!
   }
 
   type AuthPayload {
@@ -60,6 +71,14 @@ const typeDefs = `#graphql
     page: Int!
   }
 
+  type SavedPostConnection {
+    savedPosts: [SavedPost!]!
+    totalCount: Int!
+    totalPages: Int!
+    hasMore: Boolean!
+    page: Int!
+  }
+
   type Query {
     # User queries
     me: User
@@ -74,6 +93,10 @@ const typeDefs = `#graphql
 
     # Comment queries
     getComments(postId: ID!, page: Int, limit: Int): CommentConnection!
+
+    # Saved post queries
+    getSavedPosts(page: Int, limit: Int): SavedPostConnection!
+    isPostSaved(postId: ID!): Boolean!
   }
 
   type Mutation {
@@ -105,6 +128,10 @@ const typeDefs = `#graphql
     # Comment mutations
     createComment(postId: ID!, content: String!): Comment!
     deleteComment(id: ID!): Boolean!
+
+    # Saved post mutations
+    savePost(postId: ID!): SavedPost!
+    unsavePost(postId: ID!): Boolean!
 
     # Admin mutations
     updateUserRole(userId: ID!, role: Role!): User!
