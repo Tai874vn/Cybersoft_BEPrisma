@@ -223,6 +223,7 @@ const resolvers = {
       return {
         comments,
         totalCount,
+        totalPages: Math.ceil(totalCount / limit),
         hasMore: skip + comments.length < totalCount,
         page,
       };
@@ -340,6 +341,36 @@ const resolvers = {
       });
 
       return !!savedComment;
+    },
+
+    /**
+     * Get all comments across all posts (admin only)
+     */
+    getAllComments: async (_, { page = 1, limit = 20 }, context) => {
+      requireAdmin(context);
+
+      const skip = (page - 1) * limit;
+
+      const [comments, totalCount] = await Promise.all([
+        prisma.comment.findMany({
+          skip,
+          take: limit,
+          orderBy: { createdAt: "desc" },
+          include: {
+            user: true,
+            post: true,
+          },
+        }),
+        prisma.comment.count(),
+      ]);
+
+      return {
+        comments,
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        hasMore: skip + comments.length < totalCount,
+        page,
+      };
     },
 
     /**

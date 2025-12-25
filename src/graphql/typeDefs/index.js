@@ -77,6 +77,7 @@ const typeDefs = `#graphql
   type CommentConnection {
     comments: [Comment!]!
     totalCount: Int!
+    totalPages: Int!
     hasMore: Boolean!
     page: Int!
   }
